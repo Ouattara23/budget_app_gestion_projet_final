@@ -1,2 +1,6 @@
 @import "tailwindcss";
-@plugin "daisyui";
+
+/* Thème clair uniquement : l'interface est dessinée en clair, le mode sombre du système la rendait illisible */
+@plugin "daisyui" {
+  themes: light --default;
+}

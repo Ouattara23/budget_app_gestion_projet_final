@@ -1,17 +1,16 @@
-import DashBord from '@/components/DashBord'
-import { Metadata } from 'next';
+import AppShell from "@/components/AppShell"
+import DashBord from "@/components/DashBord"
+import { Metadata } from "next"
 
 export const metadata: Metadata = {
-    title: "Connexion",
+    title: "Tableau de bord",
     description: "Application de gestion de Budget",
-};
-
-function page() {
-  return (
-    <>
-      <DashBord/>  
-    </>
-  )
 }
 
-export default page
+export default function Page() {
+    return (
+        <AppShell titre="Tableau de bord">
+            <DashBord />
+        </AppShell>
+    )
+}

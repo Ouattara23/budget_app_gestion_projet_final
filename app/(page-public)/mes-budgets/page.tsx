@@ -1,18 +1,16 @@
-import SideBar2 from '@/components/sidebar2'
-import { Metadata } from 'next';
+import AppShell from "@/components/AppShell"
+import Cardbudget from "@/components/cardbudget"
+import { Metadata } from "next"
 
 export const metadata: Metadata = {
     title: "Mes budgets",
     description: "Application de gestion de Budget",
-};
-
-function page() {
-    return (
-        <>
-            {/* sidebar */}
-            <SideBar2/>
-        </>
-    )
 }
 
-export default page
+export default function Page() {
+    return (
+        <AppShell titre="Mes budgets">
+            <Cardbudget />
+        </AppShell>
+    )
+}

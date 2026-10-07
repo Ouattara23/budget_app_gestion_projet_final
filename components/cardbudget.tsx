@@ -1,123 +1,185 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { LuSquarePen, LuTrash2 } from "react-icons/lu";
-import ModalBudget from "./modalbudget";
-import { getAllDataTodatabase } from "@/lib/IndexDB/getAllDB";
-import EditModalBudget from "./EditModalBudget";
-import { DeleteToDB } from "@/lib/IndexDB/deleteToDB";
-import { BudgetType } from "@/types";
+import { useState } from "react"
+import { LuPlus, LuReceipt, LuSquarePen, LuTrash2, LuWallet } from "react-icons/lu"
+import Modal from "./Modal"
+import ModalBudget from "./modalbudget"
+import TransactionFormModal from "./TransactionFormModal"
+import { useToast } from "./useToast"
+import { useBudgetData } from "@/lib/useBudgetData"
+import { DeleteToDB } from "@/lib/IndexDB/deleteToDB"
+import { couleurProgression, depenseDuBudget, pourcentage } from "@/lib/budgetStats"
+import { formatFCFA, formatMois } from "@/lib/format"
+import { BudgetType } from "@/types"
 
-function Cardbudget(item: any) {
-    const [listeBudgets, setListeBudgets] = useState<BudgetType[]>([]);
-    
-    // Récupérer les budgets depuis IndexedDB
-    useEffect(() => {
-        if (typeof window === "undefined") return;
+const supprimer = (table: string, id: number | string) =>
+    new Promise<boolean>((resolve) => DeleteToDB(table, id, (ok: boolean) => resolve(ok)))
 
-        getAllDataTodatabase("budgets", (data:any) => {
-            console.log("Budgets récupérés :", data);
-            setListeBudgets(data || []);
-        });
-    }, []);
+// Page « Mes budgets » : cartes avec dépensé / reste / progression
+function Cardbudget() {
+    const { budgets, transactions, loading, refresh } = useBudgetData()
+    const { afficher, ToastView } = useToast()
 
-    //On ouvre le modal pour modifier la tache
-    const [todo, setToDo] = useState(null)
-    const openModal = (item:any) => {
-        setToDo(item)
-        setTimeout(() => {
-            document.getElementById("openEditModalBTN")?.click()
-        }, 100);
+    const [formOuvert, setFormOuvert] = useState(false)
+    const [aModifier, setAModifier] = useState<BudgetType | null>(null)
+    const [aSupprimer, setASupprimer] = useState<BudgetType | null>(null)
+    const [mois, setMois] = useState("") // vide = tous les mois
+    const [transactionOuverte, setTransactionOuverte] = useState(false)
+    const [budgetPourTransaction, setBudgetPourTransaction] = useState<string | undefined>(undefined)
+
+    const liste = budgets
+        .filter((b) => !mois || b.mois === mois)
+        .sort((a, b) => (b.mois || "").localeCompare(a.mois || ""))
+
+    const ouvrirCreation = () => {
+        setAModifier(null)
+        setFormOuvert(true)
     }
 
-    //On supprime la tache
-    const suprimeTache = (id: any) => {
-        if (confirm("Voulez-vous supprimer cet budget ?")) {
-            DeleteToDB("budgets", id, (e: any) => {
-                if (!e) {
-                    alert("Budgets non supprimé. une erreur s'est produite")
-                    return;
-                }
+    const ouvrirModification = (budget: BudgetType) => {
+        setAModifier(budget)
+        setFormOuvert(true)
+    }
 
-                //On retire la tache du tableau js (html)
-                const nouveauTableau = listeBudgets.filter(item =>
-                    item.id !== id
-                )
+    // budgetId fourni = bouton « Dépense » d'une carte (budget présélectionné) ; sinon bouton global
+    const ouvrirTransaction = (budgetId?: string) => {
+        setBudgetPourTransaction(budgetId)
+        setTransactionOuverte(true)
+    }
 
-                setListeBudgets(nouveauTableau);
-            })
+    const transactionsLiees = aSupprimer
+        ? transactions.filter((t) => String(t.budgetId) === String(aSupprimer.id))
+        : []
+
+    // Supprimer un budget supprime aussi ses transactions (sinon elles restent orphelines)
+    const confirmerSuppression = async () => {
+        if (!aSupprimer || aSupprimer.id === undefined) return
+        await Promise.all(transactionsLiees.map((t) => supprimer("transactions", t.id as number | string)))
+        const ok = await supprimer("budgets", aSupprimer.id)
+        setASupprimer(null)
+        if (ok) {
+            afficher("Budget supprimé")
+            refresh()
+        } else {
+            afficher("La suppression a échoué", "error")
         }
     }
 
-
     return (
-        <>
-            {/* Modal ajout de budget */}
-            <ModalBudget listeBudgets={listeBudgets} setListeBudgets={setListeBudgets} />
+        <div className="space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                    <input type="month" value={mois} onChange={(e) => setMois(e.target.value)} aria-label="Filtrer par mois" className="input bg-white w-auto" />
+                    {mois && (
+                        <button onClick={() => setMois("")} className="btn btn-ghost btn-sm">Tous les mois</button>
+                    )}
+                </div>
+                
+                <div className="flex gap-2 sm:ml-auto">
+                    <button onClick={() => ouvrirTransaction()} className="btn bg-white border-slate-300">
+                    <LuReceipt /> Nouvelle transaction
+                </button>
+                <button onClick={ouvrirCreation} className="btn bg-sky-800 hover:bg-sky-900 text-white border-none">
+                        <LuPlus /> Nouveau budget
+                    </button>
 
-            {/* Grid des budgets */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-7 px-5 lg:px-20">
+                </div>
+            </div>
 
-                {listeBudgets.length > 0 ? (
-                    listeBudgets.map((budgets, index) => (
-                        <div key={budgets.id || index + 1} className="card bg-white shadow-lg border border-gray-400" >
-                            <div className="card-body">
+            {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {[1, 2, 3].map((i) => <div key={i} className="skeleton h-44 rounded-2xl"></div>)}
+                </div>
+            ) : liste.length === 0 ? (
+                <div className="bg-white border border-dashed border-slate-300 rounded-2xl py-14 text-center">
+                    <LuWallet className="mx-auto text-4xl text-slate-300 mb-3" />
+                    <p className="text-slate-500 mb-4">
+                        {mois ? "Aucun budget pour ce mois." : "Vous n'avez pas encore de budget."}
+                    </p>
+                    <button onClick={ouvrirCreation} className="btn bg-sky-800 text-white border-none">Créer un budget</button>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {liste.map((budget) => {
+                        const depense = depenseDuBudget(budget, transactions)
+                        const reste = Number(budget.montant) - depense
+                        const pct = pourcentage(depense, Number(budget.montant))
 
-                                <h2 className="card-title text-slate-700 font-bold text-xl flex justify-between">
-                                    {budgets.nomBudget}
-                                    <span className="font-bold text-green-600">
-                                        {Number(budgets.montant).toLocaleString("fr-FR")} FCFA
-                                    </span>
-                                </h2>
+                        return (
+                            <div key={budget.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <h2 className="font-bold text-lg text-slate-800">{budget.nomBudget}</h2>
+                                        <p className="text-sm text-slate-500 capitalize">{formatMois(budget.mois)}</p>
+                                    </div>
+                                    <span className="font-bold text-sky-800 whitespace-nowrap">{formatFCFA(budget.montant)}</span>
+                                </div>
 
-                                {/*<p className="text-gray-500">
-                                    Montant Aloué :{" "}
-                                    
-                                </p>*/}
+                                <div>
+                                    <div className="flex justify-between text-sm mb-1.5">
+                                        <span className="text-slate-500">Dépensé : <b className="text-slate-700">{formatFCFA(depense)}</b></span>
+                                        <span className="font-semibold text-slate-700">{pct}%</span>
+                                    </div>
+                                    <progress className={`progress w-full ${couleurProgression(pct)}`} value={Math.min(pct, 100)} max={100}></progress>
+                                    <p className={`text-sm mt-1.5 font-medium ${reste < 0 ? "text-error" : "text-success"}`}>
+                                        {reste < 0 ? `Dépassé de ${formatFCFA(-reste)}` : `Reste ${formatFCFA(reste)}`}
+                                    </p>
+                                </div>
 
-                                <p className="text-gray-500">
-                                    Montant restant : {" "}
-                                </p>
-
-                                <p className="text-gray-500">
-                                    Mois : {" "}
-                                    <span className="font-bold text-slate-600">
-                                        {budgets.mois &&
-                                            new Date(`${budgets.mois}-01`).toLocaleDateString("fr-FR", {
-                                                month: "long",
-                                                year: "numeric",
-                                            })}
-                                    </span>
-                                </p>
-                                <div className="card-actions justify-end mt-4">
-
-                                    <button className="btn btn-sm bg-sky-900 text-white" onClick={() => openModal(budgets)} >
-                                        <LuSquarePen />
-                                        Modifier
+                                <div className="flex flex-wrap justify-end gap-2">
+                                    {/*<button onClick={() => ouvrirTransaction(String(budget.id))} className="btn btn-sm btn-outline border-sky-800 text-sky-800 hover:bg-sky-800 hover:text-white">
+                                        <LuReceipt /> Dépense
+                                    </button>*/}
+                                    <button onClick={() => ouvrirModification(budget)} className="btn btn-sm bg-sky-900 text-white border-none">
+                                        <LuSquarePen /> Modifier
                                     </button>
-
-                                    <button className="btn btn-sm btn-error text-white" onClick={() => suprimeTache(budgets.id || index + 1)}>
-                                        <LuTrash2 />
-                                        Supprimer
+                                    <button onClick={() => setASupprimer(budget)} className="btn btn-sm btn-error text-white">
+                                        <LuTrash2 /> Supprimer
                                     </button>
-
                                 </div>
                             </div>
-                        </div>
-                    ))
-                ) : (
-                    <div className="col-span-full text-center py-10">
-                        <p className="text-gray-500">
-                            Aucun budget enregistré.
-                        </p>
-                    </div>
-                )}
+                        )
+                    })}
+                </div>
+            )}
 
-                <EditModalBudget item={todo} listeBudgets={listeBudgets} setListeBudgets={setListeBudgets} />
+            <ModalBudget
+                open={formOuvert}
+                item={aModifier}
+                onClose={() => setFormOuvert(false)}
+                onSaved={(message) => {
+                    afficher(message)
+                    refresh()
+                }}
+            />
 
-            </div>
-        </>
-    );
+            <Modal open={aSupprimer !== null} onClose={() => setASupprimer(null)} titre="Supprimer ce budget ?">
+                <p className="text-slate-600">
+                    Le budget <b>{aSupprimer?.nomBudget}</b> sera supprimé définitivement
+                    {transactionsLiees.length > 0 && <>, ainsi que ses <b>{transactionsLiees.length}</b> transaction(s)</>}.
+                </p>
+                <div className="modal-action">
+                    <button onClick={() => setASupprimer(null)} className="btn btn-ghost">Annuler</button>
+                    <button onClick={confirmerSuppression} className="btn btn-error text-white">Supprimer</button>
+                </div>
+            </Modal>
+
+            <TransactionFormModal
+                open={transactionOuverte}
+                item={null}
+                budgets={budgets}
+                transactions={transactions}
+                budgetParDefaut={budgetPourTransaction}
+                onClose={() => setTransactionOuverte(false)}
+                onSaved={(message) => {
+                    afficher(message)
+                    refresh()
+                }}
+            />
+
+            {ToastView}
+        </div>
+    )
 }
 
-export default Cardbudget;
+export default Cardbudget

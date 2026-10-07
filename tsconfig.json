@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
 , "lib/IndexDB/addToDB.js", "lib/IndexDB/createdb.js", "lib/IndexDB/deleteToDB.js", "lib/IndexDB/getAllDB.js", "lib/IndexDB/getOneDataToDB.js", "lib/IndexDB/updateDataToDB.js", "lib/LoginUser.js"  ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "_obsolete"]
 }

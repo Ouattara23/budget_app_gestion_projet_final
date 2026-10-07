@@ -1,21 +1,21 @@
-import { UserType } from "@/types"
-import axios from "axios";
+import axios from "axios"
 import { NextResponse } from "next/server"
 
+// Profil utilisateur (sans mot de passe : l'authentification est gérée par Firebase Auth)
 export const POST = async (req: Request) => {
     try {
+        const { id, nom, telephone, email } = await req.json()
 
-        //On recupère les infos du frontend
-        const {nom, telephone, email, password, cpassword}: UserType = await req.json()
+        if (typeof id !== "string" || id === "" || typeof nom !== "string" || nom.trim() === "")
+            return NextResponse.json({ message: "Données invalides" }, { status: 400 })
 
-        //if(!id || id === "") return NextResponse.json({message: "id est obligatoire"});
+        // On range le profil sous l'identifiant Firebase de l'utilisateur
+        await axios.put(`${process.env.db_url}/utilisateurs/${encodeURIComponent(id)}.json`, { nom, telephone, email })
 
-        const user = await axios.post(`${process.env.db_url}/utilisateurs.json`,{nom,  telephone, email, password, cpassword} )
-
-        return NextResponse.json({message: "Utilisateur ajouté avec succès!" })
+        return NextResponse.json({ message: "Utilisateur ajouté avec succès" }, { status: 201 })
 
     } catch (error) {
-        console.log(error)
-        return NextResponse.json({message: "Une erreur s'est produite !"})
+        console.error(error)
+        return NextResponse.json({ message: "Une erreur s'est produite" }, { status: 500 })
     }
 }

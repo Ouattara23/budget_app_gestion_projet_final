@@ -1,18 +1,16 @@
-import Transactions from '@/components/Transactions'
-import { Metadata } from 'next';
+import AppShell from "@/components/AppShell"
+import MesTransactions from "@/components/MesTransactions"
+import { Metadata } from "next"
 
 export const metadata: Metadata = {
     title: "Mes transactions",
     description: "Application de gestion de Budget",
-};
-
-
-function page() {
-  return (
-    <>
-      <Transactions/>
-    </>
-  )
 }
 
-export default page
+export default function Page() {
+    return (
+        <AppShell titre="Mes transactions">
+            <MesTransactions />
+        </AppShell>
+    )
+}

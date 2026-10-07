@@ -1,17 +1,6 @@
-import DashBord from '@/components/DashBord'
-import { Metadata } from 'next';
+import { redirect } from "next/navigation"
 
-export const metadata: Metadata = {
-    title: "Tableau de bord",
-    description: "Application de gestion de Budget",
-};
-
-function page() {
-    return (
-        <>
-            <DashBord />
-        </>
-    )
+// Ancienne adresse, conservée pour ne pas casser les liens existants
+export default function Page() {
+    redirect("/tableau-de-bord")
 }
-
-export default page
