@@ -11,6 +11,7 @@ import { DeleteToDB } from "@/lib/IndexDB/deleteToDB"
 import { couleurProgression, depenseDuBudget, pourcentage } from "@/lib/budgetStats"
 import { formatFCFA, formatMois } from "@/lib/format"
 import { BudgetType } from "@/types"
+import { WorkspaceContentSkeleton } from "./WorkspaceLoading"
 
 const supprimer = (table: string, id: number | string) =>
     new Promise<boolean>((resolve) => DeleteToDB(table, id, (ok: boolean) => resolve(ok)))
@@ -66,8 +67,8 @@ function Cardbudget() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="workspace-page space-y-6">
+            <div className="workspace-toolbar flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                     <input type="month" value={mois} onChange={(e) => setMois(e.target.value)} aria-label="Filtrer par mois" className="input bg-white w-auto" />
                     {mois && (
@@ -87,9 +88,7 @@ function Cardbudget() {
             </div>
 
             {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                    {[1, 2, 3].map((i) => <div key={i} className="skeleton h-44 rounded-2xl"></div>)}
-                </div>
+                <WorkspaceContentSkeleton page="budgets" />
             ) : liste.length === 0 ? (
                 <div className="bg-white border border-dashed border-slate-300 rounded-2xl py-14 text-center">
                     <LuWallet className="mx-auto text-4xl text-slate-300 mb-3" />
@@ -106,7 +105,7 @@ function Cardbudget() {
                         const pct = pourcentage(depense, Number(budget.montant))
 
                         return (
-                            <div key={budget.id} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
+                    <div key={budget.id} className="workspace-budget-card bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
                                 <div className="flex items-start justify-between gap-3">
                                     <div>
                                         <h2 className="font-bold text-lg text-slate-800">{budget.nomBudget}</h2>

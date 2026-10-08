@@ -4,12 +4,12 @@ import "./globals.css";
 
 export const metadata: Metadata = {
     title: "Budget App",
-    description: "Application de gestion de Budget",
+    description: "Gérez vos budgets et suivez vos dépenses avec BudgetApp.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
     return (
-        <html lang="en" className={`h-full antialiased`} >
+        <html lang="fr" className={`h-full antialiased`} >
             <body className="min-h-full flex flex-col">{children}</body>
         </html>
     );

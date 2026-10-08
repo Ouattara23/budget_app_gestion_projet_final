@@ -12,7 +12,7 @@ export const GET = async (req: Request) => {
         //On recupère le parametre id
         //const { userId } = await params
         
-        const listeBudgets = await axios.get(`${process.env.db_url}/budgets.json`) 
+        const listeBudgets = await axios.get(`${process.env.db_url}/budgets.json?auth=${process.env.db_secret}`) 
         
         //On convertie l'objet json retourné en tableau js 
         const data = Object.entries(listeBudgets?.data as BudgetsData).map(([id, data]) => ({ id, ...data })) //retourne avec les id

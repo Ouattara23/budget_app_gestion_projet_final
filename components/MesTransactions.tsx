@@ -9,6 +9,7 @@ import { useBudgetData } from "@/lib/useBudgetData"
 import { DeleteToDB } from "@/lib/IndexDB/deleteToDB"
 import { formatDateHeure, formatFCFA, moisCourant } from "@/lib/format"
 import { TransactionType } from "@/types"
+import { WorkspaceContentSkeleton } from "./WorkspaceLoading"
 
 const supprimer = (id: number | string) =>
     new Promise<boolean>((resolve) => DeleteToDB("transactions", id, (ok: boolean) => resolve(ok)))
@@ -89,8 +90,8 @@ function MesTransactions() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-wrap items-center gap-3">
+        <div className="workspace-page space-y-6">
+            <div className="workspace-toolbar flex flex-wrap items-center gap-3">
                 <label className="input bg-white flex items-center gap-2 w-full sm:w-64">
                     <LuSearch className="text-slate-400" />
                     <input type="search" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher un objectif" className="grow" />
@@ -122,13 +123,13 @@ function MesTransactions() {
             </div>
 
             {loading ? (
-                <div className="skeleton h-64 rounded-2xl"></div>
+                <WorkspaceContentSkeleton page="transactions" />
             ) : filtrees.length === 0 ? (
                 <div className="bg-white border border-dashed border-slate-300 rounded-2xl py-14 text-center text-slate-500">
                     {transactions.length === 0 ? "Aucune transaction enregistrée." : "Aucune transaction ne correspond à vos filtres."}
                 </div>
             ) : (
-                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div className="workspace-table bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left text-slate-600">
                             <thead className="text-xs text-white uppercase bg-sky-900">

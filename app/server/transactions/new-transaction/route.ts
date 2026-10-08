@@ -12,7 +12,7 @@ export const POST = async (req: Request) => {
         const dateAjout = new Date()
 
         const transaction = await axios.post(
-            `${process.env.db_url}/transactions.json`,
+            `${process.env.db_url}/transactions.json?auth=${process.env.db_secret}`,
             {date, objectif, budgetId, montant, dateAjout }
         )
 

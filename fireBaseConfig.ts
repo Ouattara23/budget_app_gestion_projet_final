@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth"
+import { getStorage } from "firebase/storage"
 
 
 const firebaseConfig = {
@@ -27,3 +28,6 @@ export { analytics }
 
 //On initialise l'authentification des users
 export const InitAuth = getAuth(app)
+
+// Stockage des photos de profil
+export const InitStorage = getStorage(app)

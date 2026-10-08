@@ -7,7 +7,7 @@ export const GET = async (req: Request, { params }: { params: Promise<{id: strin
         //On recupère le parametre id
         const { id } = await params 
         //On recupere le produit dans la db
-        const p = await axios.get(`${process.env.db_url}/budgets/${id}.json`)
+        const p = await axios.get(`${process.env.db_url}/budgets/${id}.json?auth=${process.env.db_secret}`)
 
         // methode firebase
         /*const budget = await axios.get(`/serveur_url/budgets.json`)

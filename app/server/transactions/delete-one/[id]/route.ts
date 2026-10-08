@@ -8,7 +8,7 @@ export const DELETE = async (req: Request, { params }: { params: Promise<{ id: s
         const { id } = await params
 
         //On recupere le produit dans la db
-        const p = await axios.delete(`${process.env.db_url}/transactions/${id}.json`)
+        const p = await axios.delete(`${process.env.db_url}/transactions/${id}.json?auth=${process.env.db_secret}`)
 
         //retourne 
         return NextResponse.json({ transaction: p.data  })

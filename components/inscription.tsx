@@ -45,6 +45,7 @@ function Inscription() {
                 .post("/server/users/new-user", { id: user.uid, nom: nom.trim(), telephone, email: email.trim() })
                 .catch(() => console.warn("Profil non synchronisé avec le serveur"))
 
+            sessionStorage.setItem("inscription-reussie", "true")
             router.push("/tableau-de-bord")
         } catch (error) {
             setErreur(messageErreurFirebase(error))

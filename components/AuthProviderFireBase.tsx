@@ -2,51 +2,45 @@
 
 import { InitAuth } from "@/fireBaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
-import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useEffect, useRef, useState } from "react";
 
-function AuthProviderFirebase({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function AuthProviderFirebase({ children }: { children: React.ReactNode }) {
   const [load, setLoad] = useState(true);
   const [user, setUser] = useState<any>(null);
-
   const route = useRouter();
+  const pathname = usePathname();
+  const pathnameActuel = useRef(pathname);
+  pathnameActuel.current = pathname;
 
   useEffect(() => {
     const connexion = onAuthStateChanged(InitAuth, (data) => {
       if (data) {
-        // Utilisateur connecté
         setUser(data);
         setLoad(false);
       } else {
-        // Utilisateur non connecté
         setUser(null);
         setLoad(false);
-        route.replace("/connexion");
+        if (pathnameActuel.current !== "/") route.replace("/connexion");
       }
     });
 
     return () => connexion();
   }, [route]);
 
-  // Pendant que Firebase vérifie la session
+  // La page d’accueil reste consultable sans compte.
+  if (pathname === "/") return <>{children}</>;
+
   if (load) {
     return (
-      <div className="flex items-center justify-center w-full h-screen">
-        <span className="loading loading-spinner loading-xl"></span>
+      <div className="flex h-screen w-full items-center justify-center">
+        <span className="loading loading-spinner loading-xl" aria-label="Chargement" />
       </div>
     );
   }
 
-  // Si aucun utilisateur n'est connecté
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
-  // Utilisateur connecté
   return <>{children}</>;
 }
 

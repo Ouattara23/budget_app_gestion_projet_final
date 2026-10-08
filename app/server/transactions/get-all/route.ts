@@ -10,7 +10,7 @@ interface TransactionsData {
 export const GET = async (req: Request) => {
     try {
         
-        const listeTransactions = await axios.get(`${process.env.db_url}/transactions.json`) 
+        const listeTransactions = await axios.get(`${process.env.db_url}/transactions.json?auth=${process.env.db_secret}`) 
         
         //On convertie l'objet json retourné en tableau js 
         const data = Object.entries(listeTransactions?.data as TransactionsData).map(([id, data]) => ({ id, ...data })) //retourne avec les id
