@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import AmiaChatbot from "@/components/AmiaChatbot"
 import { LuArrowDownRight, LuArrowRight, LuChartNoAxesCombined, LuCheck, LuCircleHelp, LuCreditCard, LuShieldCheck, LuSparkles, LuWallet } from "react-icons/lu"
 
 export const metadata: Metadata = {
@@ -45,6 +46,7 @@ function DashboardPreview() {
 
 export default function Home() {
     return (
+        <>
         <main className="landing-page min-h-screen overflow-hidden bg-[#fbfcfa] text-slate-900">
             <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-10">
                 <Logo />
@@ -77,5 +79,7 @@ export default function Home() {
 
             <footer className="border-t border-slate-100 bg-white px-5 py-8 sm:px-8 lg:px-10"><div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row"><Logo /><p className="text-center text-xs text-slate-500">© {new Date().getFullYear()} BudgetApp · Une vision plus claire de votre budget.</p><Link href="/connexion" className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 transition hover:text-blue-700">Accéder à mon compte <LuCircleHelp className="size-3.5" /></Link></div></footer>
         </main>
+        <AmiaChatbot />
+        </>
     )
 }
