@@ -35,6 +35,20 @@ function lireDonnees(): Promise<{ budgets: BudgetType[]; transactions: Transacti
     return lectureEnCours
 }
 
+async function lireBudgetsDistants(utilisateurId?: string): Promise<BudgetType[]> {
+    if (!utilisateurId) return []
+
+    try {
+        const response = await fetch(`/server/budgets/get-all?userId=${encodeURIComponent(utilisateurId)}`, { cache: "no-store" })
+        if (!response.ok) return []
+        const resultat = await response.json() as { listeBudgets?: BudgetType[] }
+        return resultat.listeBudgets ?? []
+    } catch {
+        // Les budgets locaux restent disponibles hors connexion ou si le serveur est indisponible.
+        return []
+    }
+}
+
 // Source unique des données : les composants appellent refresh() après chaque modification
 // (plus besoin de recopier les changements à la main dans plusieurs états).
 export function useBudgetData() {
@@ -49,7 +63,10 @@ export function useBudgetData() {
     const refresh = useCallback(async () => {
         const afficherSkeleton = premiereLecture.current
         const debutLecture = Date.now()
-        const { budgets: tousBudgets, transactions: toutesTransactions } = await lireDonnees()
+        const [{ budgets: tousBudgets, transactions: toutesTransactions }, budgetsDistants] = await Promise.all([
+            lireDonnees(),
+            lireBudgetsDistants(getSessionUser()?.id),
+        ])
 
         if (afficherSkeleton) {
             const tempsRestant = DUREE_MIN_SKELETON_MS - (Date.now() - debutLecture)
@@ -59,7 +76,13 @@ export function useBudgetData() {
 
         // Chaque utilisateur ne voit que ses budgets (les anciens budgets sans userId restent visibles)
         const uid = getSessionUser()?.id
-        const mesBudgets = tousBudgets.filter((b) => !b.userId || b.userId === uid)
+        const budgetsLocaux = tousBudgets.filter((b) => !b.userId || b.userId === uid)
+        const empreinte = (budget: BudgetType) => `${budget.nomBudget.trim().toLocaleLowerCase()}|${budget.montant}|${budget.mois}`
+        const empreintesLocales = new Set(budgetsLocaux.map(empreinte))
+        const mesBudgets = [
+            ...budgetsLocaux,
+            ...budgetsDistants.filter((budget) => !empreintesLocales.has(empreinte(budget))),
+        ]
         const ids = new Set(mesBudgets.map((b) => String(b.id)))
 
         const mesTransactions = toutesTransactions.filter((t) => ids.has(String(t.budgetId)))

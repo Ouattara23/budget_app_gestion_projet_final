@@ -4,7 +4,7 @@ import { NextResponse } from "next/server"
 
 export const POST = async (req: Request) => {
     try {
-        const { nomBudget, montant, mois }: BudgetType = await req.json()
+        const { nomBudget, montant, mois, userId }: BudgetType = await req.json()
 
         if (typeof nomBudget !== "string" || nomBudget === "") 
             return NextResponse.json({ message: "Le nom est requis" }, { status: 400 });
@@ -13,7 +13,7 @@ export const POST = async (req: Request) => {
 
         const budget = await axios.post(
             `${process.env.db_url}/budgets.json?auth=${process.env.db_secret}`,
-            {nomBudget, montant, mois }
+            { nomBudget, montant, mois, ...(userId ? { userId } : {}) }
         )
 
         if (!budget.data) 

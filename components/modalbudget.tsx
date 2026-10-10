@@ -55,8 +55,9 @@ function ModalBudget({ open, item, onClose, onSaved }: Props) {
             UpdateTodatabase("budgets", item.id, data, termine)
         } else {
             // La sauvegarde locale est prioritaire ; la synchro serveur ne doit pas la bloquer
-            axios.post("/server/budgets/new-budget", data).catch(() => console.warn("Budget non synchronisé avec le serveur"))
-            AddTodatabase("budgets", { ...data, userId: getSessionUser()?.id }, termine)
+            const userId = getSessionUser()?.id
+            axios.post("/server/budgets/new-budget", { ...data, userId }).catch(() => console.warn("Budget non synchronisé avec le serveur"))
+            AddTodatabase("budgets", { ...data, userId }, termine)
         }
     }
 
