@@ -1,5 +1,6 @@
 "use client"
 
+import axios from "axios"
 import { useMemo, useState } from "react"
 import { LuDownload, LuPen, LuPlus, LuSearch, LuTrash2 } from "react-icons/lu"
 import Modal from "./Modal"
@@ -64,12 +65,20 @@ function MesTransactions() {
 
     const confirmerSuppression = async () => {
         if (!aSupprimer || aSupprimer.id === undefined) return
-        const ok = await supprimer(aSupprimer.id)
-        setASupprimer(null)
-        if (ok) {
+        try {
+            const remoteId = aSupprimer.remoteId ?? (typeof aSupprimer.id === "string" ? aSupprimer.id : undefined)
+            if (remoteId) await axios.delete(`/server/transactions/delete-one/${encodeURIComponent(remoteId)}`)
+
+            if (typeof aSupprimer.id === "number") {
+                const ok = await supprimer(aSupprimer.id)
+                if (!ok) throw new Error("La suppression locale a échoué")
+            }
+
+            setASupprimer(null)
             afficher("Transaction supprimée")
             refresh()
-        } else {
+        } catch {
+            setASupprimer(null)
             afficher("La suppression a échoué", "error")
         }
     }

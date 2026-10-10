@@ -45,7 +45,7 @@ function TransactionFormModal({ open, item, budgets, transactions, budgetParDefa
     const reste = budgetChoisi ? resteDuBudget(budgetChoisi, autres) : null
     const depasse = reste !== null && Number(montant) > reste
 
-    const enregistrer = (e: React.SubmitEvent<HTMLFormElement>) => {
+    const enregistrer = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault()
         const valeur = Number(montant)
 
@@ -56,31 +56,56 @@ function TransactionFormModal({ open, item, budgets, transactions, budgetParDefa
 
         setEnvoi(true)
         const data = { date, objectif: objectif.trim(), budgetId, montant: valeur }
+        const remoteBudgetId = budgetChoisi?.remoteId ?? (typeof budgetChoisi?.id === "string" ? String(budgetChoisi.id) : undefined)
 
-        const termine = (ok: unknown) => {
-            setEnvoi(false)
-            if (!ok) return setErreur("Une erreur s'est produite, veuillez réessayer.")
+        try {
+            if (item) {
+                const remoteId = item.remoteId ?? (typeof item.id === "string" ? item.id : undefined)
+                if (remoteId) {
+                    await axios.patch(`/server/transactions/update-one/${encodeURIComponent(remoteId)}`, {
+                        ...data,
+                        budgetId: remoteBudgetId ?? budgetId,
+                        localBudgetId: typeof budgetChoisi?.id === "number" ? String(budgetChoisi.id) : null,
+                    })
+                }
+
+                if (typeof item.id === "number") {
+                    const ok = await new Promise<boolean>((resolve) =>
+                        UpdateTodatabase("transactions", item.id!, {
+                            ...data,
+                            remoteBudgetId,
+                            localBudgetId: typeof budgetChoisi?.id === "number" ? String(budgetChoisi.id) : undefined,
+                        }, (result: boolean) => resolve(result)),
+                    )
+                    if (!ok) throw new Error("La mise à jour locale a échoué")
+                } else if (!remoteId) {
+                    throw new Error("Identifiant de la transaction introuvable")
+                }
+            } else {
+                const userId = getSessionUser()?.id
+                axios.post("/server/transactions/new-transaction", {
+                    ...data,
+                    budgetId: remoteBudgetId ?? budgetId,
+                    localBudgetId: budgetId,
+                    userId,
+                }).catch(() => console.warn("Transaction non synchronisée avec le serveur"))
+                const ok = await new Promise<boolean>((resolve) =>
+                    AddTodatabase("transactions", {
+                        ...data,
+                        userId,
+                        remoteBudgetId,
+                        dateAjout: new Date().toISOString(),
+                    }, (result: boolean) => resolve(Boolean(result))),
+                )
+                if (!ok) throw new Error("L'ajout local a échoué")
+            }
+
             onSaved(item ? "Transaction modifiée" : "Transaction ajoutée")
             onClose()
-        }
-
-        if (item?.id !== undefined) {
-            UpdateTodatabase("transactions", item.id, data, termine)
-        } else {
-            const remoteBudgetId = budgetChoisi?.remoteId ?? (typeof budgetChoisi?.id === "string" ? String(budgetChoisi.id) : undefined)
-            const userId = getSessionUser()?.id
-            axios.post("/server/transactions/new-transaction", {
-                ...data,
-                budgetId: remoteBudgetId ?? budgetId,
-                localBudgetId: budgetId,
-                userId,
-            }).catch(() => console.warn("Transaction non synchronisée avec le serveur"))
-            AddTodatabase("transactions", {
-                ...data,
-                userId,
-                remoteBudgetId,
-                dateAjout: new Date().toISOString(),
-            }, termine)
+        } catch {
+            setErreur("La modification a échoué. Vérifiez votre connexion puis réessayez.")
+        } finally {
+            setEnvoi(false)
         }
     }
 
