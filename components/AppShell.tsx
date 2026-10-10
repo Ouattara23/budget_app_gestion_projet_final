@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { LuArrowUpRight, LuHouse, LuLogOut, LuMenu, LuReceipt, LuUserRound, LuWallet } from "react-icons/lu"
 import { signOut } from "firebase/auth"
-import { InitAuth } from "@/fireBaseConfig"
+import { getFirebaseAuth } from "@/fireBaseConfig"
 import { getSessionUser } from "@/lib/session"
 import { useToast } from "./useToast"
 
@@ -26,8 +26,8 @@ export default function AppShell({ titre, children }: { titre: string; children:
     const { afficher, ToastView } = useToast()
 
     useEffect(() => {
-        setNom(InitAuth.currentUser?.displayName ?? getSessionUser()?.nom ?? null)
-        setPhotoURL(InitAuth.currentUser?.photoURL ?? null)
+        setNom(getFirebaseAuth().currentUser?.displayName ?? getSessionUser()?.nom ?? null)
+        setPhotoURL(getFirebaseAuth().currentUser?.photoURL ?? null)
         if (sessionStorage.getItem("inscription-reussie") === "true") {
             sessionStorage.removeItem("inscription-reussie")
             afficher("Inscription réussie")
@@ -41,7 +41,7 @@ export default function AppShell({ titre, children }: { titre: string; children:
 
     const deconnexion = async () => {
         try {
-            await signOut(InitAuth)
+            await signOut(getFirebaseAuth())
         } finally {
             localStorage.removeItem("user")
             router.push("/connexion")

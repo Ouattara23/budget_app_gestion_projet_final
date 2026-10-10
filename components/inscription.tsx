@@ -1,6 +1,6 @@
 "use client"
 
-import { InitAuth } from "@/fireBaseConfig"
+import { getFirebaseAuth } from "@/fireBaseConfig"
 import { messageErreurFirebase } from "@/lib/erreursAuth"
 import axios from "axios"
 import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "firebase/auth"
@@ -35,7 +35,7 @@ function Inscription() {
 
         setLoad(true)
         try {
-            const { user } = await createUserWithEmailAndPassword(InitAuth, email.trim(), password)
+            const { user } = await createUserWithEmailAndPassword(getFirebaseAuth(), email.trim(), password)
             await updateProfile(user, { displayName: nom.trim() })
             sendEmailVerification(user).catch(() => {})
 

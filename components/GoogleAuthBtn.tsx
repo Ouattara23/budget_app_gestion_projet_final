@@ -1,6 +1,6 @@
 "use client"
 
-import { InitAuth } from '@/fireBaseConfig'
+import { getFirebaseAuth } from '@/fireBaseConfig'
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -18,7 +18,7 @@ function GoogleAuthBtn() {
             const provider = new GoogleAuthProvider()
 
             //on se connecte maintenant via google
-            const data = await signInWithPopup(InitAuth, provider)
+            const data = await signInWithPopup(getFirebaseAuth(), provider)
 
             if (!data?.user) {
                 setChargement(false)

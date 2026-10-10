@@ -1,6 +1,6 @@
 "use client";
 
-import { InitAuth } from "@/fireBaseConfig";
+import { getFirebaseAuth } from "@/fireBaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
@@ -14,7 +14,7 @@ function AuthProviderFirebase({ children }: { children: React.ReactNode }) {
   pathnameActuel.current = pathname;
 
   useEffect(() => {
-    const connexion = onAuthStateChanged(InitAuth, (data) => {
+    const connexion = onAuthStateChanged(getFirebaseAuth(), (data) => {
       if (data) {
         setUser(data);
         setLoad(false);

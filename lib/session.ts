@@ -1,4 +1,4 @@
-import { InitAuth } from "@/fireBaseConfig"
+import { getFirebaseAuth } from "@/fireBaseConfig"
 import { SessionUser } from "@/types"
 
 // Utilisateur actuellement connecté.
@@ -7,7 +7,7 @@ import { SessionUser } from "@/types"
 export const getSessionUser = (): SessionUser | null => {
     if (typeof window === "undefined") return null
 
-    const actuel = InitAuth.currentUser
+    const actuel = getFirebaseAuth().currentUser
     if (actuel) return { id: actuel.uid, nom: actuel.displayName }
 
     try {

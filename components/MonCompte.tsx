@@ -1,6 +1,6 @@
 "use client"
 
-import { InitAuth, InitStorage } from "@/fireBaseConfig"
+import { getFirebaseAuth, getFirebaseStorage } from "@/fireBaseConfig"
 import { getSessionUser } from "@/lib/session"
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage"
 import { updateProfile } from "firebase/auth"
@@ -27,7 +27,7 @@ export default function MonCompte() {
     const champsModifies = useRef({ nom: false, telephone: false, photo: false })
 
     useEffect(() => {
-        const utilisateur = InitAuth.currentUser
+        const utilisateur = getFirebaseAuth().currentUser
         if (!utilisateur) return
 
         setNom(utilisateur.displayName ?? "")
@@ -64,7 +64,7 @@ export default function MonCompte() {
 
     const enregistrer = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        const utilisateur = InitAuth.currentUser
+        const utilisateur = getFirebaseAuth().currentUser
         if (!utilisateur) {
             setErreur("Reconnectez-vous pour modifier votre profil.")
             return
@@ -81,7 +81,7 @@ export default function MonCompte() {
         try {
             let nouvellePhoto = utilisateur.photoURL ?? ""
             if (photo) {
-                const destination = ref(InitStorage, `utilisateurs/${utilisateur.uid}/photo-profil`)
+                const destination = ref(getFirebaseStorage(), `utilisateurs/${utilisateur.uid}/photo-profil`)
                 nouvellePhoto = await televerserPhoto(destination, photo)
             }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { InitAuth } from "@/fireBaseConfig"
+import { getFirebaseAuth } from "@/fireBaseConfig"
 import { messageErreurFirebase } from "@/lib/erreursAuth"
 import {
     browserLocalPersistence,
@@ -34,8 +34,9 @@ function Connexion() {
         setLoad(true)
 
         try {
-            await setPersistence(InitAuth, souvenir ? browserLocalPersistence : browserSessionPersistence)
-            await signInWithEmailAndPassword(InitAuth, email.trim(), password)
+            const auth = getFirebaseAuth()
+            await setPersistence(auth, souvenir ? browserLocalPersistence : browserSessionPersistence)
+            await signInWithEmailAndPassword(auth, email.trim(), password)
             router.push("/tableau-de-bord")
         } catch (error) {
             setErreur(messageErreurFirebase(error))
@@ -51,7 +52,7 @@ function Connexion() {
             return
         }
         try {
-            await sendPasswordResetEmail(InitAuth, email.trim())
+            await sendPasswordResetEmail(getFirebaseAuth(), email.trim())
             setInfo("Un email de réinitialisation vient de vous être envoyé.")
         } catch (error) {
             setErreur(messageErreurFirebase(error))
