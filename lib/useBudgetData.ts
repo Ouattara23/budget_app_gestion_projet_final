@@ -93,19 +93,26 @@ export function useBudgetData() {
         const budgetsLocaux = tousBudgets.filter((b) => !b.userId || b.userId === uid)
         const empreinte = (budget: BudgetType) => `${budget.nomBudget.trim().toLocaleLowerCase()}|${budget.montant}|${budget.mois}`
         const budgetsLocauxAssocies = budgetsLocaux.map((budget) => {
-            const distant = budgetsDistants.find((candidat) => empreinte(candidat) === empreinte(budget))
+            const distant = budget.remoteId
+                ? budgetsDistants.find((candidat) => String(candidat.id) === String(budget.remoteId))
+                : budgetsDistants.find((candidat) => empreinte(candidat) === empreinte(budget))
             return distant?.id ? { ...budget, remoteId: String(distant.id) } : budget
         })
+        const idsBudgetsDistantsAssocies = new Set(budgetsLocauxAssocies.map((budget) => budget.remoteId).filter(Boolean))
         const empreintesLocales = new Set(budgetsLocaux.map(empreinte))
         const mesBudgets = [
             ...budgetsLocauxAssocies,
-            ...budgetsDistants.filter((budget) => !empreintesLocales.has(empreinte(budget))),
+            ...budgetsDistants.filter((budget) =>
+                !idsBudgetsDistantsAssocies.has(String(budget.id)) && !empreintesLocales.has(empreinte(budget)),
+            ),
         ]
         const transactionsLocales = toutesTransactions.filter((transaction) => !transaction.userId || transaction.userId === uid)
         const cleTransaction = (transaction: TransactionType) => `${transaction.remoteBudgetId || transaction.budgetId}|${transaction.date}|${transaction.objectif.trim().toLocaleLowerCase()}|${transaction.montant}`
         const clesLocales = new Set(transactionsLocales.map(cleTransaction))
         const transactionsLocalesAssociees = transactionsLocales.map((transaction) => {
-            const distante = transactionsDistantes.find((candidate) => cleTransaction(candidate) === cleTransaction(transaction))
+            const distante = transaction.remoteId
+                ? transactionsDistantes.find((candidate) => String(candidate.id) === String(transaction.remoteId))
+                : transactionsDistantes.find((candidate) => cleTransaction(candidate) === cleTransaction(transaction))
             return distante?.id ? { ...transaction, remoteId: String(distante.id) } : transaction
         })
         const transactionsDistantesNormalisees = transactionsDistantes.map((transaction) => {
@@ -116,7 +123,10 @@ export function useBudgetData() {
         })
         const mesTransactions = [
             ...transactionsLocalesAssociees,
-            ...transactionsDistantesNormalisees.filter((transaction) => !clesLocales.has(cleTransaction(transaction))),
+            ...transactionsDistantesNormalisees.filter((transaction) =>
+                !transactionsLocalesAssociees.some((locale) => String(locale.remoteId || "") === String(transaction.id || ""))
+                && !clesLocales.has(cleTransaction(transaction)),
+            ),
         ]
         cacheDonnees = {
             utilisateurId: uid,

@@ -75,6 +75,7 @@ function TransactionFormModal({ open, item, budgets, transactions, budgetParDefa
                             ...data,
                             remoteBudgetId,
                             localBudgetId: typeof budgetChoisi?.id === "number" ? String(budgetChoisi.id) : undefined,
+                            ...(remoteId ? { remoteId } : {}),
                         }, (result: boolean) => resolve(result)),
                     )
                     if (!ok) throw new Error("La mise à jour locale a échoué")
@@ -83,17 +84,24 @@ function TransactionFormModal({ open, item, budgets, transactions, budgetParDefa
                 }
             } else {
                 const userId = getSessionUser()?.id
-                axios.post("/server/transactions/new-transaction", {
-                    ...data,
-                    budgetId: remoteBudgetId ?? budgetId,
-                    localBudgetId: budgetId,
-                    userId,
-                }).catch(() => console.warn("Transaction non synchronisée avec le serveur"))
+                let remoteId: string | undefined
+                try {
+                    const response = await axios.post("/server/transactions/new-transaction", {
+                        ...data,
+                        budgetId: remoteBudgetId ?? budgetId,
+                        localBudgetId: budgetId,
+                        userId,
+                    })
+                    remoteId = response.data?.idbudget ? String(response.data.idbudget) : undefined
+                } catch {
+                    console.warn("Transaction non synchronisée avec le serveur")
+                }
                 const ok = await new Promise<boolean>((resolve) =>
                     AddTodatabase("transactions", {
                         ...data,
                         userId,
                         remoteBudgetId,
+                        ...(remoteId ? { remoteId } : {}),
                         dateAjout: new Date().toISOString(),
                     }, (result: boolean) => resolve(Boolean(result))),
                 )

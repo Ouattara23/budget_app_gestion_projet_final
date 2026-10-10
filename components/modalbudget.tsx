@@ -51,7 +51,7 @@ function ModalBudget({ open, item, onClose, onSaved }: Props) {
 
                 if (typeof item.id === "number") {
                     const ok = await new Promise<boolean>((resolve) =>
-                        UpdateTodatabase("budgets", item.id!, data, (result: boolean) => resolve(result)),
+                        UpdateTodatabase("budgets", item.id!, { ...data, ...(remoteId ? { remoteId } : {}) }, (result: boolean) => resolve(result)),
                     )
                     if (!ok) throw new Error("La mise à jour locale a échoué")
                 } else if (!remoteId) {
@@ -59,9 +59,15 @@ function ModalBudget({ open, item, onClose, onSaved }: Props) {
                 }
             } else {
                 const userId = getSessionUser()?.id
-                axios.post("/server/budgets/new-budget", { ...data, userId }).catch(() => console.warn("Budget non synchronisé avec le serveur"))
+                let remoteId: string | undefined
+                try {
+                    const response = await axios.post("/server/budgets/new-budget", { ...data, userId })
+                    remoteId = response.data?.idbudget ? String(response.data.idbudget) : undefined
+                } catch {
+                    console.warn("Budget non synchronisé avec le serveur")
+                }
                 const ok = await new Promise<boolean>((resolve) =>
-                    AddTodatabase("budgets", { ...data, userId }, (result: boolean) => resolve(Boolean(result))),
+                    AddTodatabase("budgets", { ...data, userId, ...(remoteId ? { remoteId } : {}) }, (result: boolean) => resolve(Boolean(result))),
                 )
                 if (!ok) throw new Error("L'ajout local a échoué")
             }
