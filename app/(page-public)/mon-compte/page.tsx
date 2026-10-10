@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import MonCompte from "@/components/MonCompte"
+import AppShell from "@/components/AppShell"
 
 export const metadata: Metadata = {
     title: "Mon compte | BudgetApp",
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function Page() {
-    return <MonCompte />
+    return (
+        <AppShell titre="Mon compte">
+            <MonCompte />
+        </AppShell>
+    )
 }
