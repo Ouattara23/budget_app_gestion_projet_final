@@ -19,7 +19,11 @@ export type TransactionType = {
     objectif: string,
     budgetId: string,
     montant: number,
-    dateAjout?: Date | string
+    dateAjout?: Date | string,
+    userId?: string,
+    localBudgetId?: string,
+    remoteBudgetId?: string,
+    remoteId?: string
 }
 
 export type BudgetType = {
@@ -27,5 +31,6 @@ export type BudgetType = {
     nomBudget: string,
     montant: number,
     mois: string, // format AAAA-MM
-    userId?: string
+    userId?: string,
+    remoteId?: string
 }

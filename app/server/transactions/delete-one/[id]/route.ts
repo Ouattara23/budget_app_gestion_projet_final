@@ -15,6 +15,6 @@ export const DELETE = async (req: Request, { params }: { params: Promise<{ id: s
 
     } catch (error) {
         console.log(error)
-        return NextResponse.json({ message: "Une erreur s'est produite." })
+        return NextResponse.json({ message: "La suppression de la transaction a échoué." }, { status: 500 })
     }
 }

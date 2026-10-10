@@ -49,6 +49,19 @@ async function lireBudgetsDistants(utilisateurId?: string): Promise<BudgetType[]
     }
 }
 
+async function lireTransactionsDistantes(utilisateurId?: string): Promise<TransactionType[]> {
+    if (!utilisateurId) return []
+
+    try {
+        const response = await fetch(`/server/transactions/get-all?userId=${encodeURIComponent(utilisateurId)}`, { cache: "no-store" })
+        if (!response.ok) return []
+        const resultat = await response.json() as { listeTransactions?: TransactionType[] }
+        return resultat.listeTransactions ?? []
+    } catch {
+        return []
+    }
+}
+
 // Source unique des données : les composants appellent refresh() après chaque modification
 // (plus besoin de recopier les changements à la main dans plusieurs états).
 export function useBudgetData() {
@@ -63,9 +76,11 @@ export function useBudgetData() {
     const refresh = useCallback(async () => {
         const afficherSkeleton = premiereLecture.current
         const debutLecture = Date.now()
-        const [{ budgets: tousBudgets, transactions: toutesTransactions }, budgetsDistants] = await Promise.all([
+        const uid = getSessionUser()?.id
+        const [{ budgets: tousBudgets, transactions: toutesTransactions }, budgetsDistants, transactionsDistantes] = await Promise.all([
             lireDonnees(),
-            lireBudgetsDistants(getSessionUser()?.id),
+            lireBudgetsDistants(uid),
+            lireTransactionsDistantes(uid),
         ])
 
         if (afficherSkeleton) {
@@ -75,17 +90,34 @@ export function useBudgetData() {
         }
 
         // Chaque utilisateur ne voit que ses budgets (les anciens budgets sans userId restent visibles)
-        const uid = getSessionUser()?.id
         const budgetsLocaux = tousBudgets.filter((b) => !b.userId || b.userId === uid)
         const empreinte = (budget: BudgetType) => `${budget.nomBudget.trim().toLocaleLowerCase()}|${budget.montant}|${budget.mois}`
+        const budgetsLocauxAssocies = budgetsLocaux.map((budget) => {
+            const distant = budgetsDistants.find((candidat) => empreinte(candidat) === empreinte(budget))
+            return distant?.id ? { ...budget, remoteId: String(distant.id) } : budget
+        })
         const empreintesLocales = new Set(budgetsLocaux.map(empreinte))
         const mesBudgets = [
-            ...budgetsLocaux,
+            ...budgetsLocauxAssocies,
             ...budgetsDistants.filter((budget) => !empreintesLocales.has(empreinte(budget))),
         ]
-        const ids = new Set(mesBudgets.map((b) => String(b.id)))
-
-        const mesTransactions = toutesTransactions.filter((t) => ids.has(String(t.budgetId)))
+        const transactionsLocales = toutesTransactions.filter((transaction) => !transaction.userId || transaction.userId === uid)
+        const cleTransaction = (transaction: TransactionType) => `${transaction.remoteBudgetId || transaction.budgetId}|${transaction.date}|${transaction.objectif.trim().toLocaleLowerCase()}|${transaction.montant}`
+        const clesLocales = new Set(transactionsLocales.map(cleTransaction))
+        const transactionsLocalesAssociees = transactionsLocales.map((transaction) => {
+            const distante = transactionsDistantes.find((candidate) => cleTransaction(candidate) === cleTransaction(transaction))
+            return distante?.id ? { ...transaction, remoteId: String(distante.id) } : transaction
+        })
+        const transactionsDistantesNormalisees = transactionsDistantes.map((transaction) => {
+            const budgetLocal = transaction.localBudgetId
+                ? budgetsLocaux.find((budget) => String(budget.id) === String(transaction.localBudgetId))
+                : undefined
+            return budgetLocal ? { ...transaction, budgetId: String(budgetLocal.id) } : transaction
+        })
+        const mesTransactions = [
+            ...transactionsLocalesAssociees,
+            ...transactionsDistantesNormalisees.filter((transaction) => !clesLocales.has(cleTransaction(transaction))),
+        ]
         cacheDonnees = {
             utilisateurId: uid,
             budgets: mesBudgets,

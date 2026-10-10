@@ -12,6 +12,7 @@ import { couleurProgression, depenseDuBudget, pourcentage } from "@/lib/budgetSt
 import { formatFCFA, formatMois } from "@/lib/format"
 import { BudgetType } from "@/types"
 import { WorkspaceContentSkeleton } from "./WorkspaceLoading"
+import axios from "axios"
 
 const supprimer = (table: string, id: number | string) =>
     new Promise<boolean>((resolve) => DeleteToDB(table, id, (ok: boolean) => resolve(ok)))
@@ -55,13 +56,30 @@ function Cardbudget() {
     // Supprimer un budget supprime aussi ses transactions (sinon elles restent orphelines)
     const confirmerSuppression = async () => {
         if (!aSupprimer || aSupprimer.id === undefined) return
-        await Promise.all(transactionsLiees.map((t) => supprimer("transactions", t.id as number | string)))
-        const ok = await supprimer("budgets", aSupprimer.id)
-        setASupprimer(null)
-        if (ok) {
+        try {
+            await Promise.all(transactionsLiees.map((transaction) => {
+                const remoteTransactionId = transaction.remoteId ?? (typeof transaction.id === "string" ? transaction.id : undefined)
+                return remoteTransactionId
+                    ? axios.delete(`/server/transactions/delete-one/${encodeURIComponent(remoteTransactionId)}`)
+                    : Promise.resolve()
+            }))
+
+            const remoteId = aSupprimer.remoteId ?? (typeof aSupprimer.id === "string" ? aSupprimer.id : undefined)
+            if (remoteId) await axios.delete(`/server/budgets/delete-one/${encodeURIComponent(remoteId)}`)
+
+            const suppressionsLocales = await Promise.all([
+                ...transactionsLiees
+                    .filter((transaction) => typeof transaction.id === "number")
+                    .map((transaction) => supprimer("transactions", transaction.id as number)),
+                ...(typeof aSupprimer.id === "number" ? [supprimer("budgets", aSupprimer.id)] : []),
+            ])
+            if (suppressionsLocales.some((ok) => !ok)) throw new Error("La suppression locale a échoué")
+
+            setASupprimer(null)
             afficher("Budget supprimé")
             refresh()
-        } else {
+        } catch {
+            setASupprimer(null)
             afficher("La suppression a échoué", "error")
         }
     }

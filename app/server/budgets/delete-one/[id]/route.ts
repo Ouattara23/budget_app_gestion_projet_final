@@ -11,10 +11,10 @@ export const DELETE = async (req: Request, { params }: { params: Promise<{ id: s
         const p = await axios.delete(`${process.env.db_url}/budgets/${id}.json?auth=${process.env.db_secret}`)
 
         //retourne 
-        return NextResponse.json({ budget: p.data  })
+        return NextResponse.json({ budget: p.data })
 
     } catch (error) {
         console.log(error)
-        return NextResponse.json({ message: "Une erreur s'est produite." })
+        return NextResponse.json({ message: "La suppression du budget a échoué." }, { status: 500 })
     }
 }

@@ -4,7 +4,7 @@ import { NextResponse } from "next/server"
 
 export const POST = async (req: Request) => {
     try {
-        const { date, objectif, budgetId, montant }: TransactionType = await req.json()
+        const { date, objectif, budgetId, montant, userId, localBudgetId }: TransactionType = await req.json()
 
         /*if (typeof nomBudget !== "string" || nomBudget === "") 
             return NextResponse.json({ message: "Le nom est requis" }, { status: 400 });
@@ -13,7 +13,7 @@ export const POST = async (req: Request) => {
 
         const transaction = await axios.post(
             `${process.env.db_url}/transactions.json?auth=${process.env.db_secret}`,
-            {date, objectif, budgetId, montant, dateAjout }
+            { date, objectif, budgetId, montant, dateAjout, ...(userId ? { userId } : {}), ...(localBudgetId ? { localBudgetId } : {}) }
         )
 
         if (!transaction.data) 

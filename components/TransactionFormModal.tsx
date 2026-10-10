@@ -8,6 +8,7 @@ import { AddTodatabase } from "@/lib/IndexDB/addToDB"
 import { UpdateTodatabase } from "@/lib/IndexDB/updateDataToDB"
 import { resteDuBudget } from "@/lib/budgetStats"
 import { dateHeureLocale, formatFCFA } from "@/lib/format"
+import { getSessionUser } from "@/lib/session"
 import { BudgetType, TransactionType } from "@/types"
 
 type Props = {
@@ -66,8 +67,20 @@ function TransactionFormModal({ open, item, budgets, transactions, budgetParDefa
         if (item?.id !== undefined) {
             UpdateTodatabase("transactions", item.id, data, termine)
         } else {
-            axios.post("/server/transactions/new-transaction", data).catch(() => console.warn("Transaction non synchronisée avec le serveur"))
-            AddTodatabase("transactions", { ...data, dateAjout: new Date().toISOString() }, termine)
+            const remoteBudgetId = budgetChoisi?.remoteId ?? (typeof budgetChoisi?.id === "string" ? String(budgetChoisi.id) : undefined)
+            const userId = getSessionUser()?.id
+            axios.post("/server/transactions/new-transaction", {
+                ...data,
+                budgetId: remoteBudgetId ?? budgetId,
+                localBudgetId: budgetId,
+                userId,
+            }).catch(() => console.warn("Transaction non synchronisée avec le serveur"))
+            AddTodatabase("transactions", {
+                ...data,
+                userId,
+                remoteBudgetId,
+                dateAjout: new Date().toISOString(),
+            }, termine)
         }
     }
 

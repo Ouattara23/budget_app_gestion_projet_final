@@ -33,7 +33,7 @@ function ModalBudget({ open, item, onClose, onSaved }: Props) {
         setErreur("")
     }, [open, item])
 
-    const enregistrer = (e: React.SubmitEvent<HTMLFormElement>) => {
+    const enregistrer = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault()
         const valeur = Number(montant)
 
@@ -44,20 +44,34 @@ function ModalBudget({ open, item, onClose, onSaved }: Props) {
         setEnvoi(true)
         const data = { nomBudget: nomBudget.trim(), montant: valeur, mois }
 
-        const termine = (ok: unknown) => {
-            setEnvoi(false)
-            if (!ok) return setErreur("Une erreur s'est produite, veuillez réessayer.")
+        try {
+            if (item) {
+                const remoteId = item.remoteId ?? (typeof item.id === "string" ? item.id : undefined)
+                if (remoteId) await axios.patch(`/server/budgets/update-one/${encodeURIComponent(remoteId)}`, data)
+
+                if (typeof item.id === "number") {
+                    const ok = await new Promise<boolean>((resolve) =>
+                        UpdateTodatabase("budgets", item.id!, data, (result: boolean) => resolve(result)),
+                    )
+                    if (!ok) throw new Error("La mise à jour locale a échoué")
+                } else if (!remoteId) {
+                    throw new Error("Identifiant du budget introuvable")
+                }
+            } else {
+                const userId = getSessionUser()?.id
+                axios.post("/server/budgets/new-budget", { ...data, userId }).catch(() => console.warn("Budget non synchronisé avec le serveur"))
+                const ok = await new Promise<boolean>((resolve) =>
+                    AddTodatabase("budgets", { ...data, userId }, (result: boolean) => resolve(Boolean(result))),
+                )
+                if (!ok) throw new Error("L'ajout local a échoué")
+            }
+
             onSaved(item ? "Budget modifié" : "Budget ajouté")
             onClose()
-        }
-
-        if (item?.id !== undefined) {
-            UpdateTodatabase("budgets", item.id, data, termine)
-        } else {
-            // La sauvegarde locale est prioritaire ; la synchro serveur ne doit pas la bloquer
-            const userId = getSessionUser()?.id
-            axios.post("/server/budgets/new-budget", { ...data, userId }).catch(() => console.warn("Budget non synchronisé avec le serveur"))
-            AddTodatabase("budgets", { ...data, userId }, termine)
+        } catch {
+            setErreur("La modification a échoué. Vérifiez votre connexion puis réessayez.")
+        } finally {
+            setEnvoi(false)
         }
     }
 

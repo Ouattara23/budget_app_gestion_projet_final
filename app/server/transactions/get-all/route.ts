@@ -9,11 +9,14 @@ interface TransactionsData {
 }
 export const GET = async (req: Request) => {
     try {
+        const userId = new URL(req.url).searchParams.get("userId")
         
         const listeTransactions = await axios.get(`${process.env.db_url}/transactions.json?auth=${process.env.db_secret}`) 
         
         //On convertie l'objet json retourné en tableau js 
-        const data = Object.entries(listeTransactions?.data as TransactionsData).map(([id, data]) => ({ id, ...data })) //retourne avec les id
+        const data = Object.entries((listeTransactions?.data ?? {}) as TransactionsData)
+            .map(([id, transaction]) => ({ id, ...transaction }))
+            .filter((transaction) => !transaction.userId || transaction.userId === userId)
         
         //const data2 = Object.values(produits.data) //retourne sans id
 
