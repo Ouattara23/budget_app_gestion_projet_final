@@ -351,3 +351,36 @@ button, a, input, select { -webkit-tap-highlight-color: transparent; }
   .auth-form-panel { padding: 26px 20px; }
   .auth-title h1 { font-size: 32px; }
 }
+
+
+/* Landing page (classes préfixées "landing-" : elles ne touchent pas le reste de l'application) */
+.landing-grid {
+  background-image: linear-gradient(rgba(255, 255, 255, .05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .05) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 65% 25%, #000 25%, transparent 78%);
+  mask-image: radial-gradient(ellipse 85% 75% at 65% 25%, #000 25%, transparent 78%);
+}
+.landing-accent {
+  color: #7dd3fc;
+  background: linear-gradient(90deg, #7dd3fc, #60a5fa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@keyframes landing-rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes landing-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes landing-reveal { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .landing-rise { animation: landing-rise .85s cubic-bezier(.2, .7, .2, 1) both; }
+  .landing-delay-2 { animation-delay: .25s; }
+  .landing-delay-3 { animation-delay: .45s; }
+  .landing-float { animation: landing-float 6s ease-in-out infinite; }
+  .landing-float-slow { animation-duration: 7.5s; animation-delay: -2s; }
+}
+/* Apparition au défilement : amélioration progressive, sans JavaScript.
+   Les navigateurs qui ne la gèrent pas affichent simplement le contenu. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .landing-reveal { animation: landing-reveal linear both; animation-timeline: view(); animation-range: entry 5% entry 45%; }
+  }
+}
