@@ -71,10 +71,17 @@ async function askOpenAICompatible(provider: "Mistral" | "OpenRouter", apiKey: s
     const url = provider === "Mistral" ? "https://api.mistral.ai/v1/chat/completions" : "https://openrouter.ai/api/v1/chat/completions"
     const headers: Record<string, string> = { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` }
     if (provider === "OpenRouter") headers["HTTP-Referer"] = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    const body = {
+        model,
+        messages: [{ role: "system", content: system }, ...messages],
+        temperature: 0.25,
+        max_tokens: 600,
+        ...(provider === "OpenRouter" ? { reasoning: { enabled: false } } : {}),
+    }
     const response = await fetchWithTimeout(url, {
         method: "POST",
         headers,
-        body: JSON.stringify({ model, messages: [{ role: "system", content: system }, ...messages], temperature: 0.25, max_tokens: 600 }),
+        body: JSON.stringify(body),
     })
     const data = await responseJson<CompatibleResponse>(response)
     return { reply: nonEmptyReply(data.choices?.[0]?.message?.content), provider }
