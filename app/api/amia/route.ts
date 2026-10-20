@@ -97,6 +97,10 @@ export async function POST(request: Request) {
     }
     if (messages.at(-1)?.role !== "user") return Response.json({ error: "Envoyez un message pour continuer." }, { status: 400 })
 
+    // The widget's welcome message is presentation-only, not part of the conversation.
+    // Gemini requires the first item in `contents` to be a user message.
+    const conversation = messages[0]?.role === "assistant" ? messages.slice(1) : messages
+
     try {
         const docsDirectory = path.join(process.cwd(), "docs")
         const [prompt, presentation] = await Promise.all([
@@ -105,9 +109,9 @@ export async function POST(request: Request) {
         ])
         const system = `${prompt}\n\n--- DOCUMENT COMMERCIAL DE RÉFÉRENCE ---\n${presentation}`
         const providers: Array<{ name: string; run: () => Promise<ProviderResult> }> = []
-        if (process.env.GEMINI_API_KEY) providers.push({ name: "Gemini", run: () => askGemini(process.env.GEMINI_API_KEY!, system, messages) })
-        if (process.env.MISTRAL_API_KEY) providers.push({ name: "Mistral", run: () => askOpenAICompatible("Mistral", process.env.MISTRAL_API_KEY!, process.env.MISTRAL_MODEL || "mistral-small-latest", system, messages) })
-        if (process.env.OPENROUTER_API_KEY) providers.push({ name: "OpenRouter", run: () => askOpenAICompatible("OpenRouter", process.env.OPENROUTER_API_KEY!, process.env.OPENROUTER_MODEL || "mistralai/mistral-small-3.2-24b-instruct", system, messages) })
+        if (process.env.GEMINI_API_KEY) providers.push({ name: "Gemini", run: () => askGemini(process.env.GEMINI_API_KEY!, system, conversation) })
+        if (process.env.MISTRAL_API_KEY) providers.push({ name: "Mistral", run: () => askOpenAICompatible("Mistral", process.env.MISTRAL_API_KEY!, process.env.MISTRAL_MODEL || "mistral-small-latest", system, conversation) })
+        if (process.env.OPENROUTER_API_KEY) providers.push({ name: "OpenRouter", run: () => askOpenAICompatible("OpenRouter", process.env.OPENROUTER_API_KEY!, process.env.OPENROUTER_MODEL || "mistralai/mistral-small-3.2-24b-instruct", system, conversation) })
         if (providers.length === 0) return Response.json({ error: "Le service de discussion sera disponible dès que ses clés de connexion auront été configurées." }, { status: 503 })
 
         const failures: string[] = []
