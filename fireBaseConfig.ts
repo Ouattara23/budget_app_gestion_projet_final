@@ -3,14 +3,18 @@ import { getAnalytics } from "firebase/analytics"
 import { getAuth } from "firebase/auth"
 import { getStorage } from "firebase/storage"
 
+// Retire les espaces et guillemets parasites (fréquents quand une valeur est collée telle quelle depuis un .env
+// dans le tableau de bord Vercel) : un authDomain entouré de guillemets casse uniquement la connexion Google.
+const nettoyer = (valeur?: string) => valeur?.trim().replace(/^["']+|["']+$/g, "").trim() || undefined
+
 const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.NEXT_PUBLIC_apiKey,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || process.env.NEXT_PUBLIC_authDomain,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_projectId,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_storageBucket,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || process.env.NEXT_PUBLIC_messagingSenderId,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || process.env.NEXT_PUBLIC_appId,
-    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || process.env.NEXT_PUBLIC_measurementId,
+    apiKey: nettoyer(process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.NEXT_PUBLIC_apiKey),
+    authDomain: nettoyer(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || process.env.NEXT_PUBLIC_authDomain),
+    projectId: nettoyer(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_projectId),
+    storageBucket: nettoyer(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_storageBucket),
+    messagingSenderId: nettoyer(process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || process.env.NEXT_PUBLIC_messagingSenderId),
+    appId: nettoyer(process.env.NEXT_PUBLIC_FIREBASE_APP_ID || process.env.NEXT_PUBLIC_appId),
+    measurementId: nettoyer(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || process.env.NEXT_PUBLIC_measurementId),
 }
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig)
